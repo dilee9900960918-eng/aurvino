@@ -1,27 +1,61 @@
-import Link from "next/link";
+"use client";
 
-const bouquets = [
+import Link from "next/link";
+import { useState } from "react";
+
+const products = [
   {
     name: "Rose Elegance",
     price: "₹1,499",
     description: "A timeless arrangement of premium roses.",
     image: "/images/rose-bouquete.png",
+    category: "Bouquets",
   },
   {
     name: "Pastel Dream",
     price: "₹1,799",
     description: "Soft seasonal blooms in a beautiful pastel palette.",
     image: "/images/rose-bouquete.png",
+    category: "Bouquets",
   },
   {
     name: "Sunshine",
     price: "₹1,299",
     description: "Bright flowers designed to make someone's day.",
     image: "/images/rose-bouquete.png",
+    category: "Bouquets",
+  },
+  {
+    name: "Luxury Gift Box",
+    price: "₹999",
+    description: "A beautiful gift box for birthdays and special moments.",
+    image: "/images/rose-bouquete.png",
+    category: "Gifts",
+  },
+  {
+    name: "Love Gift Set",
+    price: "₹1,199",
+    description: "A thoughtful gift set made for someone special.",
+    image: "/images/rose-bouquete.png",
+    category: "Gifts",
   },
 ];
 
 export default function Home() {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesCategory =
+      category === "All" || product.category === category;
+
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <main>
       {/* Navigation */}
@@ -61,50 +95,100 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Bouquets */}
+      {/* Collection */}
       <section id="bouquets" className="section">
         <div className="container">
           <div className="section-heading">
             <p className="eyebrow">OUR COLLECTION</p>
 
-            <h2>Beautiful flowers for every occasion</h2>
+            <h2>Beautiful flowers and gifts for every occasion</h2>
 
             <p>
-              Discover our carefully designed bouquets, made fresh for
-              your special moments.
+              Discover our carefully selected bouquets and gifts,
+              made for your special moments.
             </p>
           </div>
 
-          <div className="bouquet-grid">
-            {bouquets.map((bouquet) => (
-              <article className="bouquet-card" key={bouquet.name}>
-                <div className="bouquet-image">
-                  <img
-                    src={bouquet.image}
-                    alt={bouquet.name}
-                    className="bouquet-photo"
-                  />
-                </div>
-
-                <div className="bouquet-info">
-                  <h3>{bouquet.name}</h3>
-
-                  <p>{bouquet.description}</p>
-
-                  <div className="card-bottom">
-                    <strong>{bouquet.price}</strong>
-
-                    <Link
-                      href="/bookings"
-                      className="book-button"
-                    >
-                      Book
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
+          {/* Search */}
+          <div className="product-search">
+            <input
+              type="text"
+              placeholder="Search bouquets, gifts..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              aria-label="Search bouquets and gifts"
+            />
           </div>
+
+          {/* Categories */}
+          <div className="category-buttons">
+            <button
+              type="button"
+              className={category === "All" ? "active" : ""}
+              onClick={() => setCategory("All")}
+            >
+              All
+            </button>
+
+            <button
+              type="button"
+              className={category === "Bouquets" ? "active" : ""}
+              onClick={() => setCategory("Bouquets")}
+            >
+              🌸 Bouquets
+            </button>
+
+            <button
+              type="button"
+              className={category === "Gifts" ? "active" : ""}
+              onClick={() => setCategory("Gifts")}
+            >
+              🎁 Gifts
+            </button>
+          </div>
+
+          {/* Products */}
+          {filteredProducts.length > 0 ? (
+            <div className="bouquet-grid">
+              {filteredProducts.map((product) => (
+                <article className="bouquet-card" key={product.name}>
+                  <div className="bouquet-image">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="bouquet-photo"
+                    />
+                  </div>
+
+                  <div className="bouquet-info">
+                    <span className="product-category">
+                      {product.category}
+                    </span>
+
+                    <h3>{product.name}</h3>
+
+                    <p>{product.description}</p>
+
+                    <div className="card-bottom">
+                      <strong>{product.price}</strong>
+
+                      <Link
+                        href="/bookings"
+                        className="book-button"
+                      >
+                        Book
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="no-results">
+              <h3>No products found</h3>
+              <p>Try searching for another bouquet or gift.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -144,12 +228,13 @@ export default function Home() {
             >
               Contact Aurvino
             </a>
+
             <a
-  href="https://wa.me/919845507955"
-  className="primary-button"
->
-  WhatsApp: 9845507955
-</a>
+              href="https://wa.me/919845507955"
+              className="primary-button"
+            >
+              WhatsApp: 9845507955
+            </a>
           </div>
         </div>
       </section>
@@ -160,9 +245,10 @@ export default function Home() {
           <div className="logo">AURVINO</div>
 
           <p>© 2026 Aurvino Flower Boutique. All rights reserved.</p>
+
           <a href="/admin/login" className="admin-login-link">
-  Admin Login
-</a>
+            Admin Login
+          </a>
         </div>
       </footer>
     </main>

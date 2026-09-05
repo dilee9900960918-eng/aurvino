@@ -37,25 +37,32 @@ export default function AdminLoginPage() {
 
   return (
     <main className="admin-login-page">
-      <section className="admin-login-card">
-        <p className="eyebrow">AURVINO ADMIN</p>
+      <div className="admin-login-decoration admin-login-decoration-one" />
+      <div className="admin-login-decoration admin-login-decoration-two" />
 
-        <h1>Admin Login</h1>
+      <section className="admin-login-card">
+        <div className="admin-login-logo">
+          <span>✿</span>
+        </div>
+
+        <p className="eyebrow">AURVINO</p>
+
+        <h1>Welcome Back</h1>
 
         <p className="admin-login-intro">
-          Sign in to view bouquet booking orders.
+          Sign in to manage your bouquet orders.
         </p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email Address</label>
 
             <input
               id="email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Enter admin email"
+              placeholder="Enter your email"
               autoComplete="email"
               required
             />
@@ -69,7 +76,7 @@ export default function AdminLoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter admin password"
+              placeholder="Enter your password"
               autoComplete="current-password"
               required
             />
@@ -81,6 +88,10 @@ export default function AdminLoginPage() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <p className="admin-login-footer">
+          Aurvino · Bouquet Management
+        </p>
       </section>
     </main>
   );

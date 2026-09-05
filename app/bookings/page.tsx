@@ -243,6 +243,24 @@ export default function BookingsPage() {
             />
           </div>
 
+                    <div className="payment-section">
+            <h2>Payment</h2>
+
+            <p>
+              Scan the QR code below to pay with PhonePe.
+            </p>
+
+            <img
+              src="/images/phonepe-qr.png"
+              alt="PhonePe payment QR code"
+              className="payment-qr"
+            />
+
+            <p className="payment-note">
+              After completing your payment, click Confirm Booking.
+            </p>
+          </div>
+
           <button type="submit">
             Confirm Booking
           </button>
