@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 export default function BookingsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,7 +22,6 @@ export default function BookingsPage() {
 
     const newErrors: Record<string, string> = {};
 
-    // Name validation
     if (!name) {
       newErrors.name = "Please enter your name.";
     } else if (name.length < 2) {
@@ -30,7 +30,6 @@ export default function BookingsPage() {
       newErrors.name = "Please enter a valid name.";
     }
 
-    // Phone validation
     const phoneDigits = phone.replace(/\D/g, "");
 
     if (!phone) {
@@ -39,12 +38,10 @@ export default function BookingsPage() {
       newErrors.phone = "Please enter a valid phone number.";
     }
 
-    // Bouquet validation
     if (!bouquet) {
       newErrors.bouquet = "Please select a bouquet.";
     }
 
-    // Date validation
     if (!date) {
       newErrors.date = "Please select a delivery date.";
     } else {
@@ -59,7 +56,6 @@ export default function BookingsPage() {
       }
     }
 
-    // Address validation
     if (!address) {
       newErrors.address = "Please enter your delivery address.";
     } else if (address.length < 10) {
@@ -67,14 +63,16 @@ export default function BookingsPage() {
         "Please enter a more complete delivery address.";
     }
 
+    if (!paymentMethod) {
+      newErrors.paymentMethod = "Please select a payment method.";
+    }
+
     setErrors(newErrors);
 
-    // Don't submit if there are errors
     if (Object.keys(newErrors).length > 0) {
       return;
     }
 
-    // Everything is valid — save booking to database
     try {
       const response = await fetch("/api/bookings", {
         method: "POST",
@@ -88,6 +86,7 @@ export default function BookingsPage() {
           date,
           address,
           message,
+          paymentMethod,
         }),
       });
 
@@ -95,7 +94,31 @@ export default function BookingsPage() {
         throw new Error("Booking failed");
       }
 
-      // Only show success after the database confirms the booking
+      const paymentText =
+        paymentMethod === "pay-now"
+          ? "Pay Now - PhonePe QR"
+          : "Cash on Delivery";
+
+      const whatsappMessage = `Hello Aurvino,
+
+I have placed a bouquet booking.
+
+Name: ${name}
+Phone: ${phone}
+Bouquet: ${bouquet}
+Delivery Date: ${date}
+Delivery Address: ${address}
+Payment Method: ${paymentText}
+Message: ${message || "None"}
+
+Please confirm my order. Thank you! 🌸`;
+
+      const whatsappUrl = `https://wa.me/919380507626?text=${encodeURIComponent(
+        whatsappMessage
+      )}`;
+
+      window.open(whatsappUrl, "_blank");
+
       setSubmitted(true);
     } catch (error) {
       console.error("Booking error:", error);
@@ -116,7 +139,8 @@ export default function BookingsPage() {
           </p>
 
           <p>
-            We will contact you shortly to confirm your delivery.
+            Your booking details have been prepared for WhatsApp.
+            Please press Send to notify Aurvino.
           </p>
         </div>
       </main>
@@ -243,22 +267,62 @@ export default function BookingsPage() {
             />
           </div>
 
-                    <div className="payment-section">
-            <h2>Payment</h2>
+          <div className="payment-section">
+            <h2>Choose Payment Method</h2>
 
-            <p>
-              Scan the QR code below to pay with PhonePe.
-            </p>
+            <div className="payment-options">
+              <button
+                type="button"
+                className={
+                  paymentMethod === "pay-now"
+                    ? "payment-option active"
+                    : "payment-option"
+                }
+                onClick={() => setPaymentMethod("pay-now")}
+              >
+                <strong>Pay Now</strong>
+                <span>Pay using PhonePe QR</span>
+              </button>
 
-            <img
-              src="/images/phonepe-qr.png"
-              alt="PhonePe payment QR code"
-              className="payment-qr"
-            />
+              <button
+                type="button"
+                className={
+                  paymentMethod === "cod"
+                    ? "payment-option active"
+                    : "payment-option"
+                }
+                onClick={() => setPaymentMethod("cod")}
+              >
+                <strong>Cash on Delivery</strong>
+                <span>Pay when your order is delivered</span>
+              </button>
+            </div>
 
-            <p className="payment-note">
-              After completing your payment, click Confirm Booking.
-            </p>
+            {errors.paymentMethod && (
+              <p className="error-message">
+                {errors.paymentMethod}
+              </p>
+            )}
+
+            {paymentMethod === "pay-now" && (
+              <div className="qr-payment">
+                <h3>PhonePe Payment</h3>
+
+                <p>
+                  Scan the QR code below to pay with PhonePe.
+                </p>
+
+                <img
+                  src="/images/phonepe-qr.png"
+                  alt="PhonePe payment QR code"
+                  className="payment-qr"
+                />
+
+                <p className="payment-note">
+                  After completing your payment, click Confirm Booking.
+                </p>
+              </div>
+            )}
           </div>
 
           <button type="submit">

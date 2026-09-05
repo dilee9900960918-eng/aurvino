@@ -11,6 +11,7 @@ export async function POST(request: Request) {
     const date = String(body.date || "").trim();
     const address = String(body.address || "").trim();
     const message = String(body.message || "").trim();
+    const paymentMethod = String(body.paymentMethod || "").trim();
 
     // Name validation
     if (
@@ -84,13 +85,14 @@ export async function POST(request: Request) {
     // Save booking to database
     const booking = await prisma.booking.create({
       data: {
-        name,
-        phone,
-        bouquet,
-        date: deliveryDate,
-        address,
-        message: message || null,
-      },
+  name,
+  phone,
+  bouquet,
+  date: deliveryDate,
+  address,
+  message: message || null,
+  paymentMethod,
+},
     });
 
     return NextResponse.json(

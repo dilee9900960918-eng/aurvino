@@ -14,6 +14,7 @@ model Booking {
   bouquet   String
   date      DateTime
   address   String
-  message   String?
-  createdAt DateTime @default(now())
+ message        String?
+paymentMethod  String   @default("cod")
+createdAt      DateTime @default(now())
 }
