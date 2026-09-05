@@ -29,7 +29,7 @@ const products = [
     name: "Luxury Gift Box",
     price: "₹999",
     description: "A beautiful gift box for birthdays and special moments.",
-    image: "/images/public/images/premium-gift-box.png",
+    image: "/images/premium-gift-box.png",
     category: "Gifts",
   },
   {
