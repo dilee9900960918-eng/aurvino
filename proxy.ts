@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 
-export const proxy = auth((request) => {
+
+export const proxy = auth((request: any) => {
   const pathname = request.nextUrl.pathname;
 
   if (
