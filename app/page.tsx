@@ -6,7 +6,7 @@ import { useState } from "react";
 const products = [
   {
     name: "Rose Elegance",
-    price: "₹1,499",
+    price: "₹1",
     description: "A timeless arrangement of premium roses.",
     image: "/images/rose-bouquete.png",
     category: "Bouquets",
