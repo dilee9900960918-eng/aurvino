@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import QRCode from "qrcode";
 
 const bouquetPrices: Record<string, number> = {
-  "Rose Elegance": 1499,
+  "Rose Elegance": 1,
   "Pastel Dream": 1799,
   Sunshine: 1299,
 };
@@ -232,7 +232,7 @@ Please confirm my order. Thank you! 🌸`;
                 </option>
 
                 <option value="Rose Elegance">
-                  Rose Elegance — ₹1,499
+                  Rose Elegance — ₹1
                 </option>
 
                 <option value="Pastel Dream">
