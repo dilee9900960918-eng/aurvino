@@ -140,7 +140,7 @@ ${imageUrl}
 
 Please confirm my order. Thank you! 🌸`;
 
-      const whatsappUrl = `https://wa.me/919380507626?text=${encodeURIComponent(
+      const whatsappUrl = `https://wa.me/919845507955?text=${encodeURIComponent(
         whatsappMessage
       )}`;
 
