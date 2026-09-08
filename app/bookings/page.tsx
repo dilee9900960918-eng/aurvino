@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 
 const bouquetPrices: Record<string, number> = {
@@ -23,20 +22,19 @@ const productImages: Record<string, string> = {
 const UPI_ID = "9900960918@ybl";
 
 export default function BookingsPage() {
-  const searchParams = useSearchParams();
-
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedBouquet, setSelectedBouquet] = useState("");
 
   useEffect(() => {
-    const product = searchParams.get("product") || "";
+    const params = new URLSearchParams(window.location.search);
+    const product = params.get("product") || "";
 
     if (bouquetPrices[product]) {
       setSelectedBouquet(product);
     }
-  }, [searchParams]);
+  }, []);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
