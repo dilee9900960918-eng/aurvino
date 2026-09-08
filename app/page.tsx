@@ -173,7 +173,9 @@ export default function Home() {
                       <strong>{product.price}</strong>
 
                       <Link
-                        href="/bookings"
+                        href={`/bookings?product=${encodeURIComponent(
+                          product.name
+                        )}`}
                         className="book-button"
                       >
                         Book
@@ -233,7 +235,7 @@ export default function Home() {
               href="https://wa.me/919845507955"
               className="primary-button"
             >
-              WhatsApp: 9845507955
+              WhatsApp: 98455 07955
             </a>
           </div>
         </div>

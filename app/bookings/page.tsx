@@ -1,21 +1,42 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 
 const bouquetPrices: Record<string, number> = {
   "Rose Elegance": 1,
   "Pastel Dream": 1799,
   Sunshine: 1299,
+  "Luxury Gift Box": 999,
+  "Love Gift Set": 1199,
+};
+
+const productImages: Record<string, string> = {
+  "Rose Elegance": "/images/rose-bouquete.png",
+  "Pastel Dream": "/images/rose-bouquete.png",
+  Sunshine: "/images/rose-bouquete.png",
+  "Luxury Gift Box": "/images/premium-gift-box.png",
+  "Love Gift Set": "/images/rose-bouquete.png",
 };
 
 const UPI_ID = "9900960918@ybl";
 
 export default function BookingsPage() {
+  const searchParams = useSearchParams();
+
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedBouquet, setSelectedBouquet] = useState("");
+
+  useEffect(() => {
+    const product = searchParams.get("product") || "";
+
+    if (bouquetPrices[product]) {
+      setSelectedBouquet(product);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,10 +46,11 @@ export default function BookingsPage() {
 
     const name = String(formData.get("name") || "").trim();
     const phone = String(formData.get("phone") || "").trim();
-    const bouquet = String(formData.get("bouquet") || "").trim();
     const date = String(formData.get("date") || "").trim();
     const address = String(formData.get("address") || "").trim();
     const message = String(formData.get("message") || "").trim();
+
+    const bouquet = selectedBouquet;
 
     const newErrors: Record<string, string> = {};
 
@@ -48,8 +70,9 @@ export default function BookingsPage() {
       newErrors.phone = "Please enter a valid phone number.";
     }
 
-    if (!bouquet) {
-      newErrors.bouquet = "Please select a bouquet.";
+    if (!bouquet || !bouquetPrices[bouquet]) {
+      newErrors.bouquet =
+        "No product was selected. Please return to the home page and choose a product.";
     }
 
     if (!date) {
@@ -108,25 +131,28 @@ export default function BookingsPage() {
 
       const paymentText =
         paymentMethod === "pay-now"
-          ? `UPI Payment - ₹${price}`
+          ? `UPI Payment - ₹${price.toLocaleString("en-IN")}`
           : "Cash on Delivery";
 
-      const imageUrl = "https://aurvino.vercel.app/bouquet";
+      const imagePath =
+        productImages[bouquet] || "/images/rose-bouquete.png";
+
+      const imageUrl = `https://aurvino.vercel.app${imagePath}`;
 
       const whatsappMessage = `Hello Aurvino,
 
-I have placed a bouquet booking.
+I have placed a bouquet/gift booking.
 
 Name: ${name}
 Phone: ${phone}
-Bouquet: ${bouquet}
-Price: ₹${price}
+Product: ${bouquet}
+Price: ₹${price.toLocaleString("en-IN")}
 Delivery Date: ${date}
 Delivery Address: ${address}
 Payment Method: ${paymentText}
 Message: ${message || "None"}
 
-Bouquet Image:
+Product Image:
 ${imageUrl}
 
 Please confirm my order. Thank you! 🌸`;
@@ -153,7 +179,7 @@ Please confirm my order. Thank you! 🌸`;
           <h1>Thank you! 🌸</h1>
 
           <p>
-            Your bouquet booking has been received successfully.
+            Your bouquet or gift booking has been received successfully.
           </p>
 
           <p>
@@ -165,11 +191,59 @@ Please confirm my order. Thank you! 🌸`;
         <section className="booking-card">
           <p className="eyebrow">PLACE YOUR ORDER</p>
 
-          <h1>Book Your Bouquet</h1>
+          <h1>Complete Your Order</h1>
 
           <p className="booking-intro">
-            Fill in your details and we'll prepare your bouquet with care.
+            Fill in your details and we'll prepare your order with care.
           </p>
+
+          {/* Selected Product */}
+          <div
+            style={{
+              marginBottom: "24px",
+              padding: "16px",
+              borderRadius: "12px",
+              background: "#f8f5f0",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: "14px",
+                opacity: 0.7,
+              }}
+            >
+              Selected Product
+            </p>
+
+            <h2
+              style={{
+                margin: "6px 0 0",
+              }}
+            >
+              {selectedBouquet || "Loading product..."}
+            </h2>
+
+            {selectedBouquet && (
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  fontWeight: 600,
+                }}
+              >
+                ₹
+                {bouquetPrices[selectedBouquet]?.toLocaleString(
+                  "en-IN"
+                )}
+              </p>
+            )}
+          </div>
+
+          {errors.bouquet && (
+            <p className="error-message">
+              {errors.bouquet}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
@@ -199,46 +273,6 @@ Please confirm my order. Thank you! 🌸`;
 
               {errors.phone && (
                 <p className="error-message">{errors.phone}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="bouquet">Bouquet</label>
-
-              <select
-                id="bouquet"
-                name="bouquet"
-                value={selectedBouquet}
-                onChange={(e) => {
-                  setSelectedBouquet(e.target.value);
-
-                  setErrors((current) => ({
-                    ...current,
-                    bouquet: "",
-                  }));
-                }}
-              >
-                <option value="" disabled>
-                  Select a bouquet
-                </option>
-
-                <option value="Rose Elegance">
-                  Rose Elegance — ₹1
-                </option>
-
-                <option value="Pastel Dream">
-                  Pastel Dream — ₹1,799
-                </option>
-
-                <option value="Sunshine">
-                  Sunshine — ₹1,299
-                </option>
-              </select>
-
-              {errors.bouquet && (
-                <p className="error-message">
-                  {errors.bouquet}
-                </p>
               )}
             </div>
 
@@ -302,7 +336,9 @@ Please confirm my order. Thank you! 🌸`;
                   onClick={() => setPaymentMethod("pay-now")}
                 >
                   <strong>Pay Now</strong>
-                  <span>Pay exact amount using UPI QR</span>
+                  <span>
+                    Pay exact amount using UPI QR
+                  </span>
                 </button>
 
                 <button
@@ -315,7 +351,9 @@ Please confirm my order. Thank you! 🌸`;
                   onClick={() => setPaymentMethod("cod")}
                 >
                   <strong>Cash on Delivery</strong>
-                  <span>Pay when your order is delivered</span>
+                  <span>
+                    Pay when your order is delivered
+                  </span>
                 </button>
               </div>
 
@@ -383,18 +421,13 @@ function UPIPayment({ bouquet }: { bouquet: string }) {
 
       {!bouquet ? (
         <p>
-          Please select a bouquet above to generate the
-          exact-price QR code.
+          Please return to the home page and select a
+          bouquet or gift.
         </p>
       ) : (
         <>
           <p>
-            Your payment amount is automatically set for the
-            selected bouquet.
-          </p>
-
-          <p className="payment-note">
-            UPI ID: <strong>{UPI_ID}</strong>
+            Payment amount for your selected product:
           </p>
 
           <div className="payment-amount">
@@ -403,6 +436,10 @@ function UPIPayment({ bouquet }: { bouquet: string }) {
               ₹{price.toLocaleString("en-IN")}
             </strong>
           </div>
+
+          <p className="payment-note">
+            UPI ID: <strong>{UPI_ID}</strong>
+          </p>
 
           {qrCode && (
             <div className="upi-qr-wrapper">
@@ -416,7 +453,8 @@ function UPIPayment({ bouquet }: { bouquet: string }) {
 
           <p className="payment-note">
             Scan this QR with any UPI app. The amount will be
-            pre-filled as ₹{price.toLocaleString("en-IN")}.
+            pre-filled as ₹
+            {price.toLocaleString("en-IN")}.
           </p>
         </>
       )}
