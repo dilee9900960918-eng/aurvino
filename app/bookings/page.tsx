@@ -9,12 +9,6 @@ const bouquetPrices: Record<string, number> = {
   Sunshine: 1299,
 };
 
-const bouquetImages: Record<string, string> = {
-  "Rose Elegance": "/images/rose-elegance.jpg",
-  "Pastel Dream": "/images/rose-bouquete.png",
-  Sunshine: "/images/gift-collection.png",
-};
-
 const UPI_ID = "9900960918@ybl";
 
 export default function BookingsPage() {
@@ -117,10 +111,7 @@ export default function BookingsPage() {
           ? `UPI Payment - ₹${price}`
           : "Cash on Delivery";
 
-      const imageUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}${bouquetImages[bouquet]}`
-          : bouquetImages[bouquet];
+      const imageUrl = "https://aurvino.vercel.app/bouquet";
 
       const whatsappMessage = `Hello Aurvino,
 
