@@ -1073,3 +1073,128 @@ a {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+   AURVINO — CLASSY ADMIN PRODUCTS THEME
+   ========================================================= */
+
+.orders-page {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(235, 205, 215, 0.35), transparent 28%),
+    radial-gradient(circle at 90% 90%, rgba(241, 218, 207, 0.35), transparent 30%),
+    #faf6f3;
+}
+
+.orders-container {
+  max-width: 1180px;
+}
+
+/* Admin headings */
+
+.orders-container .eyebrow {
+  color: #a15d78;
+  letter-spacing: 0.22em;
+}
+
+.orders-container h1 {
+  color: #4d2939;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(38px, 5vw, 54px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.orders-intro {
+  color: #76666b;
+}
+
+/* Admin buttons */
+
+.orders-container a {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.orders-container a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(113, 56, 78, 0.16);
+}
+
+/* Product cards */
+
+.product-card {
+  border: 1px solid #eadde1 !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 8px 25px rgba(78, 43, 55, 0.06) !important;
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  border-color: #d9b7c5 !important;
+  box-shadow: 0 18px 40px rgba(78, 43, 55, 0.12) !important;
+}
+
+/* Product images */
+
+.product-card img {
+  transition: transform 0.35s ease;
+}
+
+.product-card:hover img {
+  transform: scale(1.035);
+}
+
+/* Product form inputs */
+
+.orders-container input,
+.orders-container textarea,
+.orders-container select {
+  border-color: #e4d3d9 !important;
+  border-radius: 11px !important;
+  background: #fffdfc !important;
+  color: #3e3035 !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.orders-container input:focus,
+.orders-container textarea:focus,
+.orders-container select:focus {
+  border-color: #a15d78 !important;
+  box-shadow: 0 0 0 4px rgba(161, 93, 120, 0.10) !important;
+  outline: none;
+}
+
+/* Upload area */
+
+.orders-container input[type="file"] {
+  cursor: pointer;
+  background: #fcf7f8 !important;
+}
+
+/* Admin section cards */
+
+.orders-container section,
+.orders-container article {
+  backdrop-filter: blur(4px);
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .orders-container h1 {
+    font-size: 36px;
+  }
+
+  .product-card {
+    border-radius: 16px !important;
+  }
+}

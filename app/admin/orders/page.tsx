@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 export default async function OrdersPage() {
-      const session = await auth();
+  const session = await auth();
 
   if (!session?.user) {
     redirect("/admin/login");
   }
+
   const bookings = await prisma.booking.findMany({
     orderBy: {
       createdAt: "desc",
@@ -24,6 +25,29 @@ export default async function OrdersPage() {
         <p className="orders-intro">
           View all bouquet bookings received from customers.
         </p>
+
+        <a
+          href="/admin/products"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            marginTop: "20px",
+            marginBottom: "30px",
+            padding: "14px 24px",
+            borderRadius: "999px",
+            background: "#71384e",
+            color: "#ffffff",
+            textDecoration: "none",
+            fontWeight: 700,
+            fontSize: "15px",
+            boxShadow: "0 8px 20px rgba(113, 56, 78, 0.18)",
+            cursor: "pointer",
+          }}
+        >
+          ✿ Manage Products
+        </a>
 
         {bookings.length === 0 ? (
           <div className="no-orders">
