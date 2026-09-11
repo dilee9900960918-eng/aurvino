@@ -18,3 +18,15 @@ model Booking {
 paymentMethod  String   @default("cod")
 createdAt      DateTime @default(now())
 }
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int
+  description String?
+  imageUrl    String
+  category    String
+  event       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

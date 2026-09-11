@@ -3,20 +3,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import QRCode from "qrcode";
 
-const bouquetPrices: Record<string, number> = {
-  "Rose Elegance": 1,
-  "Pastel Dream": 1799,
-  Sunshine: 1299,
-  "Luxury Gift Box": 999,
-  "Love Gift Set": 1199,
-};
-
-const productImages: Record<string, string> = {
-  "Rose Elegance": "/images/rose-bouquete.png",
-  "Pastel Dream": "/images/rose-bouquete.png",
-  Sunshine: "/images/rose-bouquete.png",
-  "Luxury Gift Box": "/images/premium-gift-box.png",
-  "Love Gift Set": "/images/rose-bouquete.png",
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  description?: string | null;
+  imageUrl: string;
+  category: string;
+  event?: string | null;
 };
 
 const UPI_ID = "9900960918@ybl";
@@ -26,27 +20,77 @@ export default function BookingsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedBouquet, setSelectedBouquet] = useState("");
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null);
+  const [loadingProduct, setLoadingProduct] = useState(true);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const product = params.get("product") || "";
+    const productName = params.get("product") || "";
 
-    if (bouquetPrices[product]) {
-      setSelectedBouquet(product);
+    setSelectedBouquet(productName);
+
+    async function loadProduct() {
+      if (!productName) {
+        setLoadingProduct(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/products");
+
+        if (!response.ok) {
+          throw new Error("Unable to load products.");
+        }
+
+        const products: Product[] = await response.json();
+
+        const databaseProduct = products.find(
+          (product) =>
+            product.name.toLowerCase() ===
+            productName.toLowerCase()
+        );
+
+        if (databaseProduct) {
+          setSelectedProduct(databaseProduct);
+        }
+      } catch (error) {
+        console.error("Product loading error:", error);
+      } finally {
+        setLoadingProduct(false);
+      }
     }
+
+    loadProduct();
   }, []);
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    e: FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
 
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const name = String(formData.get("name") || "").trim();
-    const phone = String(formData.get("phone") || "").trim();
-    const date = String(formData.get("date") || "").trim();
-    const address = String(formData.get("address") || "").trim();
-    const message = String(formData.get("message") || "").trim();
+    const name = String(
+      formData.get("name") || ""
+    ).trim();
+
+    const phone = String(
+      formData.get("phone") || ""
+    ).trim();
+
+    const date = String(
+      formData.get("date") || ""
+    ).trim();
+
+    const address = String(
+      formData.get("address") || ""
+    ).trim();
+
+    const message = String(
+      formData.get("message") || ""
+    ).trim();
 
     const bouquet = selectedBouquet;
 
@@ -55,7 +99,8 @@ export default function BookingsPage() {
     if (!name) {
       newErrors.name = "Please enter your name.";
     } else if (name.length < 2) {
-      newErrors.name = "Name must contain at least 2 characters.";
+      newErrors.name =
+        "Name must contain at least 2 characters.";
     } else if (!/^[A-Za-z\s]+$/.test(name)) {
       newErrors.name = "Please enter a valid name.";
     }
@@ -63,18 +108,24 @@ export default function BookingsPage() {
     const phoneDigits = phone.replace(/\D/g, "");
 
     if (!phone) {
-      newErrors.phone = "Please enter your phone number.";
-    } else if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-      newErrors.phone = "Please enter a valid phone number.";
+      newErrors.phone =
+        "Please enter your phone number.";
+    } else if (
+      phoneDigits.length < 10 ||
+      phoneDigits.length > 15
+    ) {
+      newErrors.phone =
+        "Please enter a valid phone number.";
     }
 
-    if (!bouquet || !bouquetPrices[bouquet]) {
+    if (!bouquet || !selectedProduct) {
       newErrors.bouquet =
-        "No product was selected. Please return to the home page and choose a product.";
+        "No valid product was selected. Please return to the home page and choose a product.";
     }
 
     if (!date) {
-      newErrors.date = "Please select a delivery date.";
+      newErrors.date =
+        "Please select a delivery date.";
     } else {
       const selectedDate = new Date(date);
       const today = new Date();
@@ -83,19 +134,22 @@ export default function BookingsPage() {
       selectedDate.setHours(0, 0, 0, 0);
 
       if (selectedDate < today) {
-        newErrors.date = "Delivery date cannot be in the past.";
+        newErrors.date =
+          "Delivery date cannot be in the past.";
       }
     }
 
     if (!address) {
-      newErrors.address = "Please enter your delivery address.";
+      newErrors.address =
+        "Please enter your delivery address.";
     } else if (address.length < 10) {
       newErrors.address =
         "Please enter a more complete delivery address.";
     }
 
     if (!paymentMethod) {
-      newErrors.paymentMethod = "Please select a payment method.";
+      newErrors.paymentMethod =
+        "Please select a payment method.";
     }
 
     setErrors(newErrors);
@@ -104,7 +158,7 @@ export default function BookingsPage() {
       return;
     }
 
-    const price = bouquetPrices[bouquet];
+    const price = selectedProduct!.price;
 
     try {
       const response = await fetch("/api/bookings", {
@@ -129,13 +183,12 @@ export default function BookingsPage() {
 
       const paymentText =
         paymentMethod === "pay-now"
-          ? `UPI Payment - ₹${price.toLocaleString("en-IN")}`
+          ? `UPI Payment - ₹${price.toLocaleString(
+              "en-IN"
+            )}`
           : "Cash on Delivery";
 
-      const imagePath =
-        productImages[bouquet] || "/images/rose-bouquete.png";
-
-      const imageUrl = `https://aurvino.vercel.app${imagePath}`;
+      const imageUrl = selectedProduct!.imageUrl;
 
       const whatsappMessage = `Hello Aurvino,
 
@@ -155,16 +208,26 @@ ${imageUrl}
 
 Please confirm my order. Thank you! 🌸`;
 
-      const whatsappUrl = `https://wa.me/919845507955?text=${encodeURIComponent(
-        whatsappMessage
-      )}`;
+      const whatsappUrl =
+        `https://wa.me/919845507955?text=${encodeURIComponent(
+          whatsappMessage
+        )}`;
 
-      window.open(whatsappUrl, "_blank");
+      window.open(
+        whatsappUrl,
+        "_blank"
+      );
 
       setSubmitted(true);
     } catch (error) {
-      console.error("Booking error:", error);
-      alert("Unable to save booking. Please try again.");
+      console.error(
+        "Booking error:",
+        error
+      );
+
+      alert(
+        "Unable to save booking. Please try again."
+      );
     }
   }
 
@@ -172,27 +235,34 @@ Please confirm my order. Thank you! 🌸`;
     <main className="booking-page">
       {submitted ? (
         <div className="success-message">
-          <p className="eyebrow">ORDER CONFIRMED</p>
+          <p className="eyebrow">
+            ORDER CONFIRMED
+          </p>
 
           <h1>Thank you! 🌸</h1>
 
           <p>
-            Your bouquet or gift booking has been received successfully.
+            Your bouquet or gift booking has
+            been received successfully.
           </p>
 
           <p>
-            Your booking details have been prepared for WhatsApp.
-            Please press Send to notify Aurvino.
+            Your booking details have been
+            prepared for WhatsApp. Please press
+            Send to notify Aurvino.
           </p>
         </div>
       ) : (
         <section className="booking-card">
-          <p className="eyebrow">PLACE YOUR ORDER</p>
+          <p className="eyebrow">
+            PLACE YOUR ORDER
+          </p>
 
           <h1>Complete Your Order</h1>
 
           <p className="booking-intro">
-            Fill in your details and we'll prepare your order with care.
+            Fill in your details and we'll
+            prepare your order with care.
           </p>
 
           {/* Selected Product */}
@@ -219,21 +289,37 @@ Please confirm my order. Thank you! 🌸`;
                 margin: "6px 0 0",
               }}
             >
-              {selectedBouquet || "Loading product..."}
+              {loadingProduct
+                ? "Loading product..."
+                : selectedBouquet ||
+                  "No product selected"}
             </h2>
 
-            {selectedBouquet && (
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  fontWeight: 600,
-                }}
-              >
-                ₹
-                {bouquetPrices[selectedBouquet]?.toLocaleString(
-                  "en-IN"
-                )}
-              </p>
+            {selectedProduct && (
+              <>
+                <p
+                  style={{
+                    margin: "6px 0 0",
+                    fontWeight: 600,
+                  }}
+                >
+                  ₹
+                  {selectedProduct.price.toLocaleString(
+                    "en-IN"
+                  )}
+                </p>
+
+                <img
+                  src={selectedProduct.imageUrl}
+                  alt={selectedProduct.name}
+                  style={{
+                    width: "100%",
+                    maxWidth: "220px",
+                    marginTop: "14px",
+                    borderRadius: "12px",
+                  }}
+                />
+              </>
             )}
           </div>
 
@@ -243,9 +329,14 @@ Please confirm my order. Thank you! 🌸`;
             </p>
           )}
 
-          <form onSubmit={handleSubmit} noValidate>
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+          >
             <div className="form-group">
-              <label htmlFor="name">Your Name</label>
+              <label htmlFor="name">
+                Your Name
+              </label>
 
               <input
                 id="name"
@@ -255,12 +346,16 @@ Please confirm my order. Thank you! 🌸`;
               />
 
               {errors.name && (
-                <p className="error-message">{errors.name}</p>
+                <p className="error-message">
+                  {errors.name}
+                </p>
               )}
             </div>
 
             <div className="form-group">
-              <label htmlFor="phone">Phone Number</label>
+              <label htmlFor="phone">
+                Phone Number
+              </label>
 
               <input
                 id="phone"
@@ -270,12 +365,16 @@ Please confirm my order. Thank you! 🌸`;
               />
 
               {errors.phone && (
-                <p className="error-message">{errors.phone}</p>
+                <p className="error-message">
+                  {errors.phone}
+                </p>
               )}
             </div>
 
             <div className="form-group">
-              <label htmlFor="date">Delivery Date</label>
+              <label htmlFor="date">
+                Delivery Date
+              </label>
 
               <input
                 id="date"
@@ -284,7 +383,9 @@ Please confirm my order. Thank you! 🌸`;
               />
 
               {errors.date && (
-                <p className="error-message">{errors.date}</p>
+                <p className="error-message">
+                  {errors.date}
+                </p>
               )}
             </div>
 
@@ -321,7 +422,9 @@ Please confirm my order. Thank you! 🌸`;
             </div>
 
             <div className="payment-section">
-              <h2>Choose Payment Method</h2>
+              <h2>
+                Choose Payment Method
+              </h2>
 
               <div className="payment-options">
                 <button
@@ -331,9 +434,14 @@ Please confirm my order. Thank you! 🌸`;
                       ? "payment-option active"
                       : "payment-option"
                   }
-                  onClick={() => setPaymentMethod("pay-now")}
+                  onClick={() =>
+                    setPaymentMethod("pay-now")
+                  }
                 >
-                  <strong>Pay Now</strong>
+                  <strong>
+                    Pay Now
+                  </strong>
+
                   <span>
                     Pay exact amount using UPI QR
                   </span>
@@ -346,9 +454,14 @@ Please confirm my order. Thank you! 🌸`;
                       ? "payment-option active"
                       : "payment-option"
                   }
-                  onClick={() => setPaymentMethod("cod")}
+                  onClick={() =>
+                    setPaymentMethod("cod")
+                  }
                 >
-                  <strong>Cash on Delivery</strong>
+                  <strong>
+                    Cash on Delivery
+                  </strong>
+
                   <span>
                     Pay when your order is delivered
                   </span>
@@ -361,12 +474,22 @@ Please confirm my order. Thank you! 🌸`;
                 </p>
               )}
 
-              {paymentMethod === "pay-now" && (
-                <UPIPayment bouquet={selectedBouquet} />
-              )}
+              {paymentMethod ===
+                "pay-now" &&
+                selectedProduct && (
+                  <UPIPayment
+                    product={selectedProduct}
+                  />
+                )}
             </div>
 
-            <button type="submit">
+            <button
+              type="submit"
+              disabled={
+                loadingProduct ||
+                !selectedProduct
+              }
+            >
               Confirm Booking
             </button>
           </form>
@@ -376,30 +499,28 @@ Please confirm my order. Thank you! 🌸`;
   );
 }
 
-function UPIPayment({ bouquet }: { bouquet: string }) {
-  const [qrCode, setQrCode] = useState("");
+function UPIPayment({
+  product,
+}: {
+  product: Product;
+}) {
+  const [qrCode, setQrCode] =
+    useState("");
 
-  const price = bouquetPrices[bouquet] || 0;
+  const price = product.price;
 
   const upiLink =
-    price > 0
-      ? `upi://pay?pa=${encodeURIComponent(
-          UPI_ID
-        )}&pn=${encodeURIComponent(
-          "Aurvino"
-        )}&am=${price.toFixed(
-          2
-        )}&cu=INR&tn=${encodeURIComponent(
-          `Aurvino ${bouquet}`
-        )}`
-      : "";
+    `upi://pay?pa=${encodeURIComponent(
+      UPI_ID
+    )}&pn=${encodeURIComponent(
+      "Aurvino"
+    )}&am=${price.toFixed(
+      2
+    )}&cu=INR&tn=${encodeURIComponent(
+      `Aurvino ${product.name}`
+    )}`;
 
   useEffect(() => {
-    if (!upiLink) {
-      setQrCode("");
-      return;
-    }
-
     QRCode.toDataURL(upiLink, {
       width: 300,
       margin: 2,
@@ -408,7 +529,11 @@ function UPIPayment({ bouquet }: { bouquet: string }) {
         setQrCode(url);
       })
       .catch((error) => {
-        console.error("QR generation error:", error);
+        console.error(
+          "QR generation error:",
+          error
+        );
+
         setQrCode("");
       });
   }, [upiLink]);
@@ -417,45 +542,38 @@ function UPIPayment({ bouquet }: { bouquet: string }) {
     <div className="qr-payment">
       <h3>UPI Payment</h3>
 
-      {!bouquet ? (
-        <p>
-          Please return to the home page and select a
-          bouquet or gift.
-        </p>
-      ) : (
-        <>
-          <p>
-            Payment amount for your selected product:
-          </p>
+      <p>
+        Payment amount for your selected
+        product:
+      </p>
 
-          <div className="payment-amount">
-            Amount:{" "}
-            <strong>
-              ₹{price.toLocaleString("en-IN")}
-            </strong>
-          </div>
+      <div className="payment-amount">
+        Amount:{" "}
+        <strong>
+          ₹{price.toLocaleString("en-IN")}
+        </strong>
+      </div>
 
-          <p className="payment-note">
-            UPI ID: <strong>{UPI_ID}</strong>
-          </p>
+      <p className="payment-note">
+        UPI ID:{" "}
+        <strong>{UPI_ID}</strong>
+      </p>
 
-          {qrCode && (
-            <div className="upi-qr-wrapper">
-              <img
-                src={qrCode}
-                alt={`UPI QR code for ₹${price}`}
-                className="payment-qr"
-              />
-            </div>
-          )}
-
-          <p className="payment-note">
-            Scan this QR with any UPI app. The amount will be
-            pre-filled as ₹
-            {price.toLocaleString("en-IN")}.
-          </p>
-        </>
+      {qrCode && (
+        <div className="upi-qr-wrapper">
+          <img
+            src={qrCode}
+            alt={`UPI QR code for ₹${price}`}
+            className="payment-qr"
+          />
+        </div>
       )}
+
+      <p className="payment-note">
+        Scan this QR with any UPI app. The
+        amount will be pre-filled as ₹
+        {price.toLocaleString("en-IN")}.
+      </p>
     </div>
   );
 }
