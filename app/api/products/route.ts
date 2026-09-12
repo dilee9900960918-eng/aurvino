@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+function getImageUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((url) => String(url).trim())
+    .filter(Boolean);
+}
+
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
@@ -41,6 +51,7 @@ export async function POST(request: Request) {
     const price = Number(body.price);
     const description = String(body.description || "").trim();
     const imageUrl = String(body.imageUrl || "").trim();
+    const imageUrls = getImageUrls(body.imageUrls);
     const category = String(body.category || "").trim();
     const event = String(body.event || "").trim();
 
@@ -58,9 +69,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!imageUrl) {
+    if (!imageUrl && imageUrls.length === 0) {
       return NextResponse.json(
-        { error: "Product image is required." },
+        { error: "At least one product image is required." },
         { status: 400 }
       );
     }
@@ -72,12 +83,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const finalImageUrl = imageUrl || imageUrls[0];
+
+    const finalImageUrls = imageUrls.length
+      ? imageUrls
+      : [finalImageUrl];
+
     const product = await prisma.product.create({
       data: {
         name,
         price: Math.round(price),
         description: description || null,
-        imageUrl,
+        imageUrl: finalImageUrl,
+        imageUrls: finalImageUrls,
         category,
         event: event || null,
       },
@@ -118,6 +136,7 @@ export async function PUT(request: Request) {
     const price = Number(body.price);
     const description = String(body.description || "").trim();
     const imageUrl = String(body.imageUrl || "").trim();
+    const imageUrls = getImageUrls(body.imageUrls);
     const category = String(body.category || "").trim();
     const event = String(body.event || "").trim();
 
@@ -142,9 +161,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!imageUrl) {
+    if (!imageUrl && imageUrls.length === 0) {
       return NextResponse.json(
-        { error: "Product image is required." },
+        { error: "At least one product image is required." },
         { status: 400 }
       );
     }
@@ -169,6 +188,16 @@ export async function PUT(request: Request) {
       );
     }
 
+    const finalImageUrl =
+      imageUrl ||
+      imageUrls[0] ||
+      existingProduct.imageUrl;
+
+    const finalImageUrls =
+      imageUrls.length > 0
+        ? imageUrls
+        : [finalImageUrl];
+
     const product = await prisma.product.update({
       where: {
         id,
@@ -177,7 +206,8 @@ export async function PUT(request: Request) {
         name,
         price: Math.round(price),
         description: description || null,
-        imageUrl,
+        imageUrl: finalImageUrl,
+        imageUrls: finalImageUrls,
         category,
         event: event || null,
       },

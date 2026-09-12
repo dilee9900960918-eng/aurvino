@@ -3,8 +3,6 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
- 
-
   session: {
     strategy: "jwt",
   },
@@ -27,10 +25,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const email = String(credentials.email).trim();
+        const email = String(credentials.email).trim().toLowerCase();
         const password = String(credentials.password);
 
-        const adminEmail = process.env.ADMIN_EMAIL;
+        const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
         const passwordHash = process.env.ADMIN_PASSWORD_HASH;
 
         if (!adminEmail || !passwordHash) {
@@ -39,6 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         if (email !== adminEmail) {
+          console.error("Admin email does not match.");
           return null;
         }
 
@@ -48,6 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
 
         if (!passwordMatches) {
+          console.error("Admin password does not match.");
           return null;
         }
 

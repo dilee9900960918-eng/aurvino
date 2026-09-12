@@ -17,6 +17,7 @@ const UPI_ID = "9900960918@ybl";
 
 export default function BookingsPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [bookingId, setBookingId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedBouquet, setSelectedBouquet] = useState("");
@@ -177,9 +178,15 @@ export default function BookingsPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Booking failed");
+        throw new Error(
+          data.error || "Booking failed"
+        );
       }
+
+      setBookingId(data.bookingId);
 
       const paymentText =
         paymentMethod === "pay-now"
@@ -194,6 +201,7 @@ export default function BookingsPage() {
 
 I have placed a bouquet/gift booking.
 
+Booking ID: ${data.bookingId}
 Name: ${name}
 Phone: ${phone}
 Product: ${bouquet}
@@ -226,7 +234,9 @@ Please confirm my order. Thank you! 🌸`;
       );
 
       alert(
-        "Unable to save booking. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Unable to save booking. Please try again."
       );
     }
   }
@@ -234,22 +244,96 @@ Please confirm my order. Thank you! 🌸`;
   return (
     <main className="booking-page">
       {submitted ? (
-        <div className="success-message">
+        <div
+          className="success-message"
+          style={{
+            maxWidth: "650px",
+            margin: "0 auto",
+          }}
+        >
           <p className="eyebrow">
-            ORDER CONFIRMED
+            ORDER RECEIVED
           </p>
 
-          <h1>Thank you! 🌸</h1>
+          <h1>
+            Thank you! 🌸
+          </h1>
 
           <p>
             Your bouquet or gift booking has
             been received successfully.
           </p>
 
-          <p>
-            Your booking details have been
-            prepared for WhatsApp. Please press
-            Send to notify Aurvino.
+          {/* BOOKING ID */}
+          <div
+            style={{
+              marginTop: "24px",
+              padding: "24px",
+              borderRadius: "18px",
+              background: "#f8eef2",
+              border: "1px solid #eadde1",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                color: "#8b747d",
+                fontSize: "12px",
+                fontWeight: 700,
+                letterSpacing: "1.5px",
+              }}
+            >
+              YOUR BOOKING ID
+            </p>
+
+            <h2
+              style={{
+                margin: "10px 0",
+                color: "#71384e",
+                fontSize: "24px",
+                wordBreak: "break-all",
+              }}
+            >
+              {bookingId}
+            </h2>
+
+            <p
+              style={{
+                margin: 0,
+                color: "#76666b",
+                fontSize: "14px",
+              }}
+            >
+              Keep this Booking ID safe. You can
+              use it to track your order anytime.
+            </p>
+          </div>
+
+          {/* TRACK ORDER */}
+          <a
+            href={`/track?bookingId=${encodeURIComponent(
+              bookingId
+            )}`}
+            className="primary-button"
+            style={{
+              display: "inline-flex",
+              marginTop: "20px",
+              textDecoration: "none",
+            }}
+          >
+            Track Your Order
+          </a>
+
+          <p
+            style={{
+              marginTop: "20px",
+              color: "#76666b",
+            }}
+          >
+            Your booking details have also
+            been prepared for WhatsApp. Please
+            press Send in WhatsApp to notify
+            Aurvino.
           </p>
         </div>
       ) : (

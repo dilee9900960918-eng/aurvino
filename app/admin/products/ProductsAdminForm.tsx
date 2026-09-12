@@ -13,6 +13,7 @@ type Product = {
   price: number;
   description: string | null;
   imageUrl: string;
+  imageUrls: string[];
   category: string;
   event: string | null;
   active: boolean;
@@ -32,7 +33,8 @@ export default function ProductsAdminForm() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Bouquets");
   const [event, setEvent] = useState("General");
-  const [imageUrl, setImageUrl] = useState("");
+
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const [editingId, setEditingId] =
     useState<string | null>(null);
@@ -64,7 +66,18 @@ export default function ProductsAdminForm() {
         );
       }
 
-      setProducts(data);
+      const normalizedProducts = data.map(
+        (product: Product) => ({
+          ...product,
+          imageUrls:
+            Array.isArray(product.imageUrls) &&
+            product.imageUrls.length > 0
+              ? product.imageUrls
+              : [product.imageUrl],
+        })
+      );
+
+      setProducts(normalizedProducts);
     } catch (error) {
       console.error(
         "Product loading error:",
@@ -84,43 +97,59 @@ export default function ProductsAdminForm() {
   async function handleImageUpload(
     e: ChangeEvent<HTMLInputElement>
   ) {
-    const file = e.target.files?.[0];
+    const files = Array.from(
+      e.target.files || []
+    );
 
-    if (!file) return;
+    if (files.length === 0) return;
 
     setError("");
     setSuccess("");
     setUploading(true);
 
     try {
-      const formData = new FormData();
+      const uploadedUrls: string[] = [];
 
-      formData.append("file", file);
-      formData.append(
-        "upload_preset",
-        UPLOAD_PRESET
-      );
+      for (const file of files) {
+        const formData = new FormData();
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error?.message ||
-            "Image upload failed."
+        formData.append("file", file);
+        formData.append(
+          "upload_preset",
+          UPLOAD_PRESET
         );
+
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error?.message ||
+              "Image upload failed."
+          );
+        }
+
+        uploadedUrls.push(data.secure_url);
       }
 
-      setImageUrl(data.secure_url);
+      setImageUrls((current) => [
+        ...current,
+        ...uploadedUrls,
+      ]);
+
       setSuccess(
-        "Photo uploaded successfully."
+        `${uploadedUrls.length} photo${
+          uploadedUrls.length === 1
+            ? ""
+            : "s"
+        } uploaded successfully.`
       );
     } catch (error) {
       console.error(
@@ -135,7 +164,18 @@ export default function ProductsAdminForm() {
       );
     } finally {
       setUploading(false);
+
+      e.target.value = "";
     }
+  }
+
+  function removeImage(index: number) {
+    setImageUrls((current) =>
+      current.filter(
+        (_, imageIndex) =>
+          imageIndex !== index
+      )
+    );
   }
 
   function startEditing(product: Product) {
@@ -147,7 +187,14 @@ export default function ProductsAdminForm() {
     );
     setCategory(product.category);
     setEvent(product.event || "General");
-    setImageUrl(product.imageUrl);
+
+    const urls =
+      Array.isArray(product.imageUrls) &&
+      product.imageUrls.length > 0
+        ? product.imageUrls
+        : [product.imageUrl];
+
+    setImageUrls(urls);
 
     setError("");
     setSuccess("");
@@ -165,7 +212,7 @@ export default function ProductsAdminForm() {
     setDescription("");
     setCategory("Bouquets");
     setEvent("General");
-    setImageUrl("");
+    setImageUrls([]);
 
     setError("");
     setSuccess("");
@@ -193,9 +240,9 @@ export default function ProductsAdminForm() {
       return;
     }
 
-    if (!imageUrl) {
+    if (imageUrls.length === 0) {
       setError(
-        "Please upload a product photo."
+        "Please upload at least one product photo."
       );
       return;
     }
@@ -219,7 +266,8 @@ export default function ProductsAdminForm() {
             price: Number(price),
             description:
               description.trim(),
-            imageUrl,
+            imageUrl: imageUrls[0],
+            imageUrls,
             category,
             event,
           }),
@@ -649,11 +697,11 @@ export default function ProductsAdminForm() {
 
                 <div style={fieldStyle}>
                   <label style={labelStyle}>
-                    Product Photo
+                    Product Photos
                   </label>
 
                   <label
-                    htmlFor="product-image"
+                    htmlFor="product-images"
                     style={{
                       display: "block",
                       border:
@@ -691,8 +739,8 @@ export default function ProductsAdminForm() {
                       }}
                     >
                       {uploading
-                        ? "Uploading photo..."
-                        : "Choose a product photo"}
+                        ? "Uploading photos..."
+                        : "Choose product photos"}
                     </strong>
 
                     <span
@@ -704,13 +752,15 @@ export default function ProductsAdminForm() {
                       }}
                     >
                       JPG or PNG ·
-                      Click to browse
+                      You can select
+                      multiple photos
                     </span>
 
                     <input
-                      id="product-image"
+                      id="product-images"
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={
                         handleImageUpload
                       }
@@ -724,59 +774,138 @@ export default function ProductsAdminForm() {
                   </label>
                 </div>
 
-                {imageUrl && (
+                {imageUrls.length > 0 && (
                   <div
                     style={{
-                      marginTop:
-                        "18px",
-                      position:
-                        "relative",
-                      borderRadius:
-                        "18px",
-                      overflow:
-                        "hidden",
-                      background:
-                        "#f6eff2",
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(130px, 1fr))",
+                      gap: "12px",
+                      marginTop: "18px",
                     }}
                   >
-                    <img
-                      src={imageUrl}
-                      alt="Product preview"
-                      style={{
-                        width: "100%",
-                        height:
-                          "230px",
-                        objectFit:
-                          "cover",
-                        display:
-                          "block",
-                      }}
-                    />
+                    {imageUrls.map(
+                      (url, index) => (
+                        <div
+                          key={`${url}-${index}`}
+                          style={{
+                            position:
+                              "relative",
+                            borderRadius:
+                              "14px",
+                            overflow:
+                              "hidden",
+                            background:
+                              "#f6eff2",
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Product preview ${
+                              index + 1
+                            }`}
+                            style={{
+                              width: "100%",
+                              height:
+                                "140px",
+                              objectFit:
+                                "cover",
+                              display:
+                                "block",
+                            }}
+                          />
 
-                    <div
-                      style={{
-                        position:
-                          "absolute",
-                        bottom:
-                          "12px",
-                        left:
-                          "12px",
-                        background:
-                          "rgba(255,255,255,0.92)",
-                        padding:
-                          "7px 12px",
-                        borderRadius:
-                          "20px",
-                        fontSize:
-                          "12px",
-                        fontWeight: 600,
-                        color:
-                          "#7e3b58",
-                      }}
-                    >
-                      ✓ Photo ready
-                    </div>
+                          {index === 0 && (
+                            <div
+                              style={{
+                                position:
+                                  "absolute",
+                                top: "8px",
+                                left: "8px",
+                                background:
+                                  "rgba(255,255,255,0.94)",
+                                color:
+                                  "#7e3b58",
+                                padding:
+                                  "5px 8px",
+                                borderRadius:
+                                  "15px",
+                                fontSize:
+                                  "10px",
+                                fontWeight:
+                                  700,
+                              }}
+                            >
+                              Main
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeImage(
+                                index
+                              )
+                            }
+                            disabled={
+                              uploading ||
+                              saving
+                            }
+                            style={{
+                              position:
+                                "absolute",
+                              top: "8px",
+                              right:
+                                "8px",
+                              width:
+                                "28px",
+                              height:
+                                "28px",
+                              borderRadius:
+                                "50%",
+                              border:
+                                "none",
+                              background:
+                                "rgba(255,255,255,0.94)",
+                              color:
+                                "#a24b55",
+                              fontSize:
+                                "16px",
+                              fontWeight:
+                                700,
+                              cursor:
+                                "pointer",
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )
+                    )}
                   </div>
+                )}
+
+                {imageUrls.length > 0 && (
+                  <p
+                    style={{
+                      margin:
+                        "10px 0 0",
+                      color:
+                        "#8d858d",
+                      fontSize:
+                        "12px",
+                    }}
+                  >
+                    {imageUrls.length}{" "}
+                    photo
+                    {imageUrls.length ===
+                    1
+                      ? ""
+                      : "s"}{" "}
+                    selected. The first
+                    photo will be the
+                    main product image.
+                  </p>
                 )}
               </div>
             </div>
@@ -1082,6 +1211,7 @@ export default function ProductsAdminForm() {
                       >
                         <img
                           src={
+                            product.imageUrls?.[0] ||
                             product.imageUrl
                           }
                           alt={
@@ -1097,6 +1227,41 @@ export default function ProductsAdminForm() {
                               "block",
                           }}
                         />
+
+                        {product.imageUrls &&
+                          product.imageUrls.length >
+                            1 && (
+                            <div
+                              style={{
+                                position:
+                                  "absolute",
+                                bottom:
+                                  "14px",
+                                right:
+                                  "14px",
+                                background:
+                                  "rgba(255,255,255,0.94)",
+                                color:
+                                  "#873d5d",
+                                padding:
+                                  "6px 10px",
+                                borderRadius:
+                                  "20px",
+                                fontSize:
+                                  "11px",
+                                fontWeight:
+                                  700,
+                              }}
+                            >
+                              📷{" "}
+                              {
+                                product
+                                  .imageUrls
+                                  .length
+                              }{" "}
+                              Photos
+                            </div>
+                          )}
 
                         <div
                           style={{

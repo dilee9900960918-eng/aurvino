@@ -126,6 +126,16 @@ export default function Home() {
             <Link href="#bouquets">Bouquets</Link>
             <Link href="#about">About</Link>
             <Link href="#contact">Contact</Link>
+
+            <Link
+              href="/track"
+              style={{
+                fontWeight: 700,
+                color: "#71384e",
+              }}
+            >
+              Track Order
+            </Link>
           </nav>
         </div>
       </header>
@@ -149,12 +159,33 @@ export default function Home() {
             beautiful moment.
           </p>
 
-          <Link
-            href="#bouquets"
-            className="primary-button"
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
           >
-            Explore Bouquets
-          </Link>
+            <Link
+              href="#bouquets"
+              className="primary-button"
+            >
+              Explore Bouquets
+            </Link>
+
+            <Link
+              href="/track"
+              className="primary-button"
+              style={{
+                background: "#ffffff",
+                color: "#71384e",
+                border: "1px solid #dccbd1",
+              }}
+            >
+              Track Your Order
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -493,12 +524,28 @@ export default function Home() {
             rights reserved.
           </p>
 
-          <a
-            href="/admin/login"
-            className="admin-login-link"
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
           >
-            Admin Login
-          </a>
+            <Link
+              href="/track"
+              className="admin-login-link"
+            >
+              Track Order
+            </Link>
+
+            <a
+              href="/admin/login"
+              className="admin-login-link"
+            >
+              Admin Login
+            </a>
+          </div>
         </div>
       </footer>
     </main>

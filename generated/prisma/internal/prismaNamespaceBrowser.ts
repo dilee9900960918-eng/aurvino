@@ -76,10 +76,12 @@ export const BookingScalarFieldEnum = {
   name: 'name',
   phone: 'phone',
   bouquet: 'bouquet',
+  price: 'price',
   date: 'date',
   address: 'address',
   message: 'message',
   paymentMethod: 'paymentMethod',
+  status: 'status',
   createdAt: 'createdAt'
 } as const
 
@@ -92,6 +94,7 @@ export const ProductScalarFieldEnum = {
   price: 'price',
   description: 'description',
   imageUrl: 'imageUrl',
+  imageUrls: 'imageUrls',
   category: 'category',
   event: 'event',
   active: 'active',
