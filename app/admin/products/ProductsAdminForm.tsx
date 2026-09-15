@@ -402,7 +402,7 @@ export default function ProductsAdminForm() {
               textTransform: "uppercase",
             }}
           >
-            ✿ AURVINO ADMIN
+            ✿ Aurivon ADMIN
           </p>
 
           <h1
@@ -434,7 +434,7 @@ export default function ProductsAdminForm() {
           >
             {editingId
               ? "Refresh your collection with updated product details."
-              : "Add a beautiful bouquet or thoughtful gift to your Aurvino collection."}
+              : "Add a beautiful bouquet or thoughtful gift to your Aurivon collection."}
           </p>
 
           <div
@@ -1402,7 +1402,7 @@ export default function ProductsAdminForm() {
                                 "#9b9198",
                             }}
                           >
-                            Aurvino
+                            Aurivon
                           </span>
                         </div>
 

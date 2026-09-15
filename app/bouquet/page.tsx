@@ -15,12 +15,12 @@ export default function BouquetPage() {
         textAlign: "center",
       }}
     >
-      <h1>Aurvino Bouquet 🌸</h1>
+      <h1>Aurivon Bouquet 🌸</h1>
 
       <div style={{ marginTop: "20px" }}>
         <Image
           src="/images/rose-bouquete.png"
-          alt="Aurvino Rose Elegance Bouquet"
+          alt="Aurivon Rose Elegance Bouquet"
           width={500}
           height={500}
           style={{
@@ -33,7 +33,7 @@ export default function BouquetPage() {
       </div>
 
       <p style={{ marginTop: "20px" }}>
-        Thank you for choosing Aurvino 🌷
+        Thank you for choosing Aurivon 🌷
       </p>
     </main>
   );

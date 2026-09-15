@@ -23,13 +23,67 @@ export default function BookingsPage() {
   const [selectedBouquet, setSelectedBouquet] = useState("");
   const [selectedProduct, setSelectedProduct] =
     useState<Product | null>(null);
-  const [loadingProduct, setLoadingProduct] = useState(true);
+  const [cartProducts, setCartProducts] =
+    useState<Product[]>([]);
+  const [loadingProduct, setLoadingProduct] =
+    useState(true);
+
+  const [deliveryAddress, setDeliveryAddress] =
+    useState("");
+
+  const isCartCheckout = cartProducts.length > 0;
+
+  const cartTotal = cartProducts.reduce(
+    (total, product) => total + product.price,
+    0
+  );
+
+  const orderSubtotal = isCartCheckout
+    ? cartTotal
+    : selectedProduct?.price || 0;
+
+  const deliveryCharge =
+    deliveryAddress
+      .toLowerCase()
+      .includes("bengaluru") ||
+    deliveryAddress
+      .toLowerCase()
+      .includes("bangalore")
+      ? 0
+      : deliveryAddress.trim().length > 0
+        ? 100
+        : 0;
+
+  const orderTotal =
+    orderSubtotal + deliveryCharge;
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const productName = params.get("product") || "";
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    const productName =
+      params.get("product") || "";
 
     setSelectedBouquet(productName);
+
+    try {
+      const savedCart = JSON.parse(
+        localStorage.getItem("Aurivon-cart") || "[]"
+      );
+
+      if (
+        Array.isArray(savedCart) &&
+        savedCart.length > 0
+      ) {
+        setCartProducts(savedCart);
+      }
+    } catch (error) {
+      console.error(
+        "Unable to load cart:",
+        error
+      );
+    }
 
     async function loadProduct() {
       if (!productName) {
@@ -38,25 +92,36 @@ export default function BookingsPage() {
       }
 
       try {
-        const response = await fetch("/api/products");
-
-        if (!response.ok) {
-          throw new Error("Unable to load products.");
-        }
-
-        const products: Product[] = await response.json();
-
-        const databaseProduct = products.find(
-          (product) =>
-            product.name.toLowerCase() ===
-            productName.toLowerCase()
+        const response = await fetch(
+          "/api/products"
         );
 
+        if (!response.ok) {
+          throw new Error(
+            "Unable to load products."
+          );
+        }
+
+        const products: Product[] =
+          await response.json();
+
+        const databaseProduct =
+          products.find(
+            (product) =>
+              product.name.toLowerCase() ===
+              productName.toLowerCase()
+          );
+
         if (databaseProduct) {
-          setSelectedProduct(databaseProduct);
+          setSelectedProduct(
+            databaseProduct
+          );
         }
       } catch (error) {
-        console.error("Product loading error:", error);
+        console.error(
+          "Product loading error:",
+          error
+        );
       } finally {
         setLoadingProduct(false);
       }
@@ -89,24 +154,32 @@ export default function BookingsPage() {
       formData.get("address") || ""
     ).trim();
 
+    setDeliveryAddress(address);
+
     const message = String(
       formData.get("message") || ""
     ).trim();
 
     const bouquet = selectedBouquet;
 
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> =
+      {};
 
     if (!name) {
-      newErrors.name = "Please enter your name.";
+      newErrors.name =
+        "Please enter your name.";
     } else if (name.length < 2) {
       newErrors.name =
         "Name must contain at least 2 characters.";
-    } else if (!/^[A-Za-z\s]+$/.test(name)) {
-      newErrors.name = "Please enter a valid name.";
+    } else if (
+      !/^[A-Za-z\s]+$/.test(name)
+    ) {
+      newErrors.name =
+        "Please enter a valid name.";
     }
 
-    const phoneDigits = phone.replace(/\D/g, "");
+    const phoneDigits =
+      phone.replace(/\D/g, "");
 
     if (!phone) {
       newErrors.phone =
@@ -119,16 +192,29 @@ export default function BookingsPage() {
         "Please enter a valid phone number.";
     }
 
-    if (!bouquet || !selectedProduct) {
+    if (
+      !isCartCheckout &&
+      (!bouquet || !selectedProduct)
+    ) {
       newErrors.bouquet =
         "No valid product was selected. Please return to the home page and choose a product.";
+    }
+
+    if (
+      isCartCheckout &&
+      cartProducts.length === 0
+    ) {
+      newErrors.bouquet =
+        "Your cart is empty.";
     }
 
     if (!date) {
       newErrors.date =
         "Please select a delivery date.";
     } else {
-      const selectedDate = new Date(date);
+      const selectedDate =
+        new Date(date);
+
       const today = new Date();
 
       today.setHours(0, 0, 0, 0);
@@ -155,28 +241,43 @@ export default function BookingsPage() {
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length > 0) {
+    if (
+      Object.keys(newErrors).length > 0
+    ) {
       return;
     }
 
-    const price = selectedProduct!.price;
-
     try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          phone,
-          bouquet,
-          date,
-          address,
-          message,
-          paymentMethod,
-        }),
-      });
+      const productNames = isCartCheckout
+        ? cartProducts
+            .map((product) => product.name)
+            .join(", ")
+        : selectedProduct!.name;
+
+      const response = await fetch(
+        "/api/bookings",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            phone,
+            bouquet: isCartCheckout
+              ? productNames
+              : bouquet,
+            date,
+            address,
+            message,
+            paymentMethod,
+            cartItems: isCartCheckout
+              ? cartProducts
+              : [],
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -190,29 +291,49 @@ export default function BookingsPage() {
 
       const paymentText =
         paymentMethod === "pay-now"
-          ? `UPI Payment - ₹${price.toLocaleString(
+          ? `UPI Payment - ₹${orderTotal.toLocaleString(
               "en-IN"
             )}`
           : "Cash on Delivery";
 
-      const imageUrl = selectedProduct!.imageUrl;
+      const productImageLines =
+        isCartCheckout
+          ? cartProducts
+              .map(
+                (product) =>
+                  `${product.name}: ${product.imageUrl}`
+              )
+              .join("\n")
+          : selectedProduct!.imageUrl;
 
-      const whatsappMessage = `Hello Aurvino,
+      const whatsappMessage = `Hello Aurivon,
 
 I have placed a bouquet/gift booking.
 
 Booking ID: ${data.bookingId}
 Name: ${name}
 Phone: ${phone}
-Product: ${bouquet}
-Price: ₹${price.toLocaleString("en-IN")}
+Products: ${productNames}
+Products Subtotal: ₹${orderSubtotal.toLocaleString(
+        "en-IN"
+      )}
+Delivery Charge: ${
+        deliveryCharge === 0
+          ? "FREE"
+          : `₹${deliveryCharge.toLocaleString(
+              "en-IN"
+            )}`
+      }
+Total Price: ₹${orderTotal.toLocaleString(
+        "en-IN"
+      )}
 Delivery Date: ${date}
 Delivery Address: ${address}
 Payment Method: ${paymentText}
 Message: ${message || "None"}
 
-Product Image:
-${imageUrl}
+Product Images:
+${productImageLines}
 
 Please confirm my order. Thank you! 🌸`;
 
@@ -226,6 +347,11 @@ Please confirm my order. Thank you! 🌸`;
         "_blank"
       );
 
+      localStorage.removeItem(
+        "Aurivon-cart"
+      );
+
+      setCartProducts([]);
       setSubmitted(true);
     } catch (error) {
       console.error(
@@ -264,7 +390,6 @@ Please confirm my order. Thank you! 🌸`;
             been received successfully.
           </p>
 
-          {/* BOOKING ID */}
           <div
             style={{
               marginTop: "24px",
@@ -309,7 +434,6 @@ Please confirm my order. Thank you! 🌸`;
             </p>
           </div>
 
-          {/* TRACK ORDER */}
           <a
             href={`/track?bookingId=${encodeURIComponent(
               bookingId
@@ -333,7 +457,7 @@ Please confirm my order. Thank you! 🌸`;
             Your booking details have also
             been prepared for WhatsApp. Please
             press Send in WhatsApp to notify
-            Aurvino.
+            Aurivon.
           </p>
         </div>
       ) : (
@@ -342,70 +466,184 @@ Please confirm my order. Thank you! 🌸`;
             PLACE YOUR ORDER
           </p>
 
-          <h1>Complete Your Order</h1>
+          <h1>
+            {isCartCheckout
+              ? "Complete Your Cart Order"
+              : "Complete Your Order"}
+          </h1>
 
           <p className="booking-intro">
             Fill in your details and we'll
             prepare your order with care.
           </p>
 
-          {/* Selected Product */}
-          <div
-            style={{
-              marginBottom: "24px",
-              padding: "16px",
-              borderRadius: "12px",
-              background: "#f8f5f0",
-            }}
-          >
-            <p
+          {/* Cart Products */}
+          {isCartCheckout ? (
+            <div
               style={{
-                margin: 0,
-                fontSize: "14px",
-                opacity: 0.7,
+                marginBottom: "24px",
+                padding: "16px",
+                borderRadius: "12px",
+                background: "#f8f5f0",
               }}
             >
-              Selected Product
-            </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "14px",
+                  opacity: 0.7,
+                }}
+              >
+                Products in Your Cart
+              </p>
 
-            <h2
-              style={{
-                margin: "6px 0 0",
-              }}
-            >
-              {loadingProduct
-                ? "Loading product..."
-                : selectedBouquet ||
-                  "No product selected"}
-            </h2>
+              <div
+                style={{
+                  display: "grid",
+                  gap: "14px",
+                  marginTop: "14px",
+                }}
+              >
+                {cartProducts.map(
+                  (product, index) => (
+                    <div
+                      key={`${product.id}-${index}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "14px",
+                      }}
+                    >
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        style={{
+                          width: "70px",
+                          height: "70px",
+                          objectFit: "cover",
+                          borderRadius: "10px",
+                        }}
+                      />
 
-            {selectedProduct && (
-              <>
-                <p
+                      <div
+                        style={{
+                          flex: 1,
+                        }}
+                      >
+                        <strong>
+                          {product.name}
+                        </strong>
+
+                        <p
+                          style={{
+                            margin: "4px 0 0",
+                            color: "#71384e",
+                            fontWeight: 700,
+                          }}
+                        >
+                          ₹
+                          {product.price.toLocaleString(
+                            "en-IN"
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div
+                style={{
+                  marginTop: "18px",
+                  paddingTop: "16px",
+                  borderTop:
+                    "1px solid #e5d8dc",
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  fontWeight: 700,
+                  fontSize: "18px",
+                }}
+              >
+                <span>
+                  Products Subtotal
+                </span>
+
+                <span
                   style={{
-                    margin: "6px 0 0",
-                    fontWeight: 600,
+                    color: "#71384e",
                   }}
                 >
                   ₹
-                  {selectedProduct.price.toLocaleString(
+                  {cartTotal.toLocaleString(
                     "en-IN"
                   )}
-                </p>
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* Single Product */
+            <div
+              style={{
+                marginBottom: "24px",
+                padding: "16px",
+                borderRadius: "12px",
+                background: "#f8f5f0",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "14px",
+                  opacity: 0.7,
+                }}
+              >
+                Selected Product
+              </p>
 
-                <img
-                  src={selectedProduct.imageUrl}
-                  alt={selectedProduct.name}
-                  style={{
-                    width: "100%",
-                    maxWidth: "220px",
-                    marginTop: "14px",
-                    borderRadius: "12px",
-                  }}
-                />
-              </>
-            )}
-          </div>
+              <h2
+                style={{
+                  margin: "6px 0 0",
+                }}
+              >
+                {loadingProduct
+                  ? "Loading product..."
+                  : selectedBouquet ||
+                    "No product selected"}
+              </h2>
+
+              {selectedProduct && (
+                <>
+                  <p
+                    style={{
+                      margin: "6px 0 0",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ₹
+                    {selectedProduct.price.toLocaleString(
+                      "en-IN"
+                    )}
+                  </p>
+
+                  <img
+                    src={
+                      selectedProduct.imageUrl
+                    }
+                    alt={
+                      selectedProduct.name
+                    }
+                    style={{
+                      width: "100%",
+                      maxWidth: "220px",
+                      marginTop: "14px",
+                      borderRadius: "12px",
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          )}
 
           {errors.bouquet && (
             <p className="error-message">
@@ -483,6 +721,12 @@ Please confirm my order. Thank you! 🌸`;
                 name="address"
                 placeholder="Enter your delivery address"
                 rows={4}
+                value={deliveryAddress}
+                onChange={(e) =>
+                  setDeliveryAddress(
+                    e.target.value
+                  )
+                }
               />
 
               {errors.address && (
@@ -490,6 +734,110 @@ Please confirm my order. Thank you! 🌸`;
                   {errors.address}
                 </p>
               )}
+            </div>
+
+            {/* Order Summary */}
+            <div
+              style={{
+                marginBottom: "24px",
+                padding: "18px",
+                borderRadius: "12px",
+                background: "#f8f5f0",
+                border: "1px solid #e5d8dc",
+              }}
+            >
+              <h2
+                style={{
+                  margin: "0 0 14px",
+                  fontSize: "20px",
+                }}
+              >
+                Order Summary
+              </h2>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  gap: "20px",
+                  marginBottom: "8px",
+                }}
+              >
+                <span>
+                  Products Subtotal
+                </span>
+
+                <strong>
+                  ₹
+                  {orderSubtotal.toLocaleString(
+                    "en-IN"
+                  )}
+                </strong>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  gap: "20px",
+                  marginBottom: "12px",
+                }}
+              >
+                <span>
+                  Delivery Charge
+                </span>
+
+                <strong>
+                  {deliveryAddress.trim().length ===
+                  0
+                    ? "Enter address"
+                    : deliveryCharge === 0
+                      ? "FREE"
+                      : `₹${deliveryCharge.toLocaleString(
+                          "en-IN"
+                        )}`}
+                </strong>
+              </div>
+
+              <div
+                style={{
+                  paddingTop: "12px",
+                  borderTop:
+                    "1px solid #e5d8dc",
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  gap: "20px",
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  color: "#71384e",
+                }}
+              >
+                <span>
+                  Total
+                </span>
+
+                <span>
+                  ₹
+                  {orderTotal.toLocaleString(
+                    "en-IN"
+                  )}
+                </span>
+              </div>
+
+              <p
+                style={{
+                  margin: "12px 0 0",
+                  fontSize: "13px",
+                  opacity: 0.7,
+                }}
+              >
+                Bengaluru delivery is free.
+                Delivery to other locations is
+                ₹100.
+              </p>
             </div>
 
             <div className="form-group">
@@ -514,12 +862,15 @@ Please confirm my order. Thank you! 🌸`;
                 <button
                   type="button"
                   className={
-                    paymentMethod === "pay-now"
+                    paymentMethod ===
+                    "pay-now"
                       ? "payment-option active"
                       : "payment-option"
                   }
                   onClick={() =>
-                    setPaymentMethod("pay-now")
+                    setPaymentMethod(
+                      "pay-now"
+                    )
                   }
                 >
                   <strong>
@@ -527,7 +878,8 @@ Please confirm my order. Thank you! 🌸`;
                   </strong>
 
                   <span>
-                    Pay exact amount using UPI QR
+                    Pay exact amount using UPI
+                    QR
                   </span>
                 </button>
 
@@ -539,7 +891,9 @@ Please confirm my order. Thank you! 🌸`;
                       : "payment-option"
                   }
                   onClick={() =>
-                    setPaymentMethod("cod")
+                    setPaymentMethod(
+                      "cod"
+                    )
                   }
                 >
                   <strong>
@@ -547,7 +901,8 @@ Please confirm my order. Thank you! 🌸`;
                   </strong>
 
                   <span>
-                    Pay when your order is delivered
+                    Pay when your order is
+                    delivered
                   </span>
                 </button>
               </div>
@@ -560,9 +915,15 @@ Please confirm my order. Thank you! 🌸`;
 
               {paymentMethod ===
                 "pay-now" &&
-                selectedProduct && (
+                orderTotal > 0 && (
                   <UPIPayment
-                    product={selectedProduct}
+                    amount={orderTotal}
+                    productName={
+                      isCartCheckout
+                        ? "Aurivon Cart Order"
+                        : selectedProduct?.name ||
+                          "Aurivon Order"
+                    }
                   />
                 )}
             </div>
@@ -571,7 +932,8 @@ Please confirm my order. Thank you! 🌸`;
               type="submit"
               disabled={
                 loadingProduct ||
-                !selectedProduct
+                (!selectedProduct &&
+                  !isCartCheckout)
               }
             >
               Confirm Booking
@@ -584,24 +946,24 @@ Please confirm my order. Thank you! 🌸`;
 }
 
 function UPIPayment({
-  product,
+  amount,
+  productName,
 }: {
-  product: Product;
+  amount: number;
+  productName: string;
 }) {
   const [qrCode, setQrCode] =
     useState("");
-
-  const price = product.price;
 
   const upiLink =
     `upi://pay?pa=${encodeURIComponent(
       UPI_ID
     )}&pn=${encodeURIComponent(
-      "Aurvino"
-    )}&am=${price.toFixed(
+      "Aurivon"
+    )}&am=${amount.toFixed(
       2
     )}&cu=INR&tn=${encodeURIComponent(
-      `Aurvino ${product.name}`
+      productName
     )}`;
 
   useEffect(() => {
@@ -624,30 +986,36 @@ function UPIPayment({
 
   return (
     <div className="qr-payment">
-      <h3>UPI Payment</h3>
+      <h3>
+        UPI Payment
+      </h3>
 
       <p>
-        Payment amount for your selected
-        product:
+        Payment amount for your order:
       </p>
 
       <div className="payment-amount">
         Amount:{" "}
         <strong>
-          ₹{price.toLocaleString("en-IN")}
+          ₹
+          {amount.toLocaleString(
+            "en-IN"
+          )}
         </strong>
       </div>
 
       <p className="payment-note">
         UPI ID:{" "}
-        <strong>{UPI_ID}</strong>
+        <strong>
+          {UPI_ID}
+        </strong>
       </p>
 
       {qrCode && (
         <div className="upi-qr-wrapper">
           <img
             src={qrCode}
-            alt={`UPI QR code for ₹${price}`}
+            alt={`UPI QR code for ₹${amount}`}
             className="payment-qr"
           />
         </div>
@@ -656,7 +1024,9 @@ function UPIPayment({
       <p className="payment-note">
         Scan this QR with any UPI app. The
         amount will be pre-filled as ₹
-        {price.toLocaleString("en-IN")}.
+        {amount.toLocaleString(
+          "en-IN"
+        )}.
       </p>
     </div>
   );

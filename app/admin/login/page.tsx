@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
           <span>✿</span>
         </div>
 
-        <p className="eyebrow">AURVINO</p>
+        <p className="eyebrow">Aurivon</p>
 
         <h1>Welcome Back</h1>
 
@@ -90,7 +90,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="admin-login-footer">
-          Aurvino · Bouquet Management
+          Aurivon · Bouquet Management
         </p>
       </section>
     </main>

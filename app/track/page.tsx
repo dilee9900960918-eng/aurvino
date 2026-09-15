@@ -101,7 +101,7 @@ export default function TrackPage() {
             letterSpacing: "2px",
           }}
         >
-          AURVINO
+          Aurivon
         </p>
 
         <h1

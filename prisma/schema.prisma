@@ -12,7 +12,7 @@ model Booking {
   name          String
   phone         String
   bouquet       String
-price         Int @default(0)
+  price         Int      @default(0)
   date          DateTime
   address       String
   message       String?
@@ -33,4 +33,13 @@ model Product {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  name      String
+  rating    Int
+  comment   String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

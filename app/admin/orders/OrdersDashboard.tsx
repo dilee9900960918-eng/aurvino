@@ -69,7 +69,7 @@ export default function OrdersDashboard({
   return (
     <main className="orders-page">
       <section className="orders-container">
-        <p className="eyebrow">AURVINO ADMIN</p>
+        <p className="eyebrow">Aurivon ADMIN</p>
 
         <h1>Admin Dashboard</h1>
 
