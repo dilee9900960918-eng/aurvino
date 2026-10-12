@@ -24,7 +24,6 @@ export async function GET() {
     return NextResponse.json(bookings);
   } catch (error) {
     console.error("Booking loading failed:", error);
-
     return NextResponse.json(
       { error: "Unable to load bookings." },
       { status: 500 }
@@ -44,10 +43,7 @@ export async function POST(request: Request) {
     const address = String(body.address || "").trim();
     const message = String(body.message || "").trim();
     const paymentMethod = String(body.paymentMethod || "").trim();
-
-    const cartItems = Array.isArray(body.cartItems)
-      ? body.cartItems
-      : [];
+    const cartItems = Array.isArray(body.cartItems) ? body.cartItems : [];
 
     if (!name || name.length < 2 || !/^[A-Za-z\s]+$/.test(name)) {
       return NextResponse.json(
@@ -129,10 +125,7 @@ export async function POST(request: Request) {
 
       if (products.length !== productNames.length) {
         return NextResponse.json(
-          {
-            error:
-              "One or more products in your cart are no longer available.",
-          },
+          { error: "One or more products in your cart are no longer available." },
           { status: 400 }
         );
       }
@@ -195,7 +188,6 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Booking creation failed:", error);
-
     return NextResponse.json(
       { error: "Unable to save booking. Please try again." },
       { status: 500 }
@@ -203,12 +195,13 @@ export async function POST(request: Request) {
   }
 }
 
-// PATCH: Update booking status
-export async function PATCH(request: Request) {
+// PUT: Update booking status from the admin dashboard
+export async function PUT(request: Request) {
   try {
     const body = await request.json();
 
-    const bookingId = String(body.bookingId || "").trim();
+    // The dashboard sends { id, status }
+    const bookingId = String(body.id || body.bookingId || "").trim();
     const status = String(body.status || "").trim().toLowerCase();
 
     const allowedStatuses = [
@@ -247,7 +240,6 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     console.error("Booking status update failed:", error);
-
     return NextResponse.json(
       { error: "Unable to update booking status." },
       { status: 500 }
